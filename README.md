@@ -1,7 +1,3 @@
 # skincare-server
 
-A Clojure app to ... well, that part is up to you.
-
-## Usage
-
-FIXME
+Clojure server that serves and stores data for the upcoming skincare clojurescript app.
