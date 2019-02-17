@@ -6,8 +6,19 @@
             [compojure.core :refer :all]
             [compojure.route :as route]
             [skincare_server.database :refer [default-push]]
-            [ring.middleware.json :refer [wrap-json-params]))
+            [ring.middleware.json :only [wrap-json-body]]
+            [ring.util.response :only [response]]))
+
 (def port 8000)
+(defn handler [request]
+  (let
+    [[mood skin prod food period exercise] (get-in request [:mood :skin :products :food :period :exercise])]
+    (save-data [mood skin prod food period exercise])
+    ))
+
+(defn handler [request]
+  (let [] (get-in request [:mood :skin :products :food :period :exercise]))
+
 
 
 (defn save-data
@@ -17,14 +28,13 @@
     (default-push resp)))
 
 
-(defroutes app
+(defroutes app-routes
            (GET "/" [] "Maronn, I am running! Try cache me!")
-           (route/not-found "404!")
-           (POST "/input_value" request
-             (let [{request-params :params} request
-                   response {:status 200 :result done}]
-               (println request))))
-   
+           (POST "/post-data"  req {:status 200 :body req})
+           (route/not-found "404 page not found"))
+
+(def app
+  (-> ()))
 
 (defn -main [& args]
   (run-server app {:port port})
