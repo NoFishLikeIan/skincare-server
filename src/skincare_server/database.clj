@@ -15,7 +15,6 @@
     (fn [post-data]
       (let [post (assoc post-data :_id (ObjectId.))
             document (mc/insert-and-return db collection-name post)]
-        (println document)
         document))))
 
 
