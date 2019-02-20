@@ -13,7 +13,6 @@
             [skincare_server.utils :refer [stringify-mongo-map]]))
 
 (def port (or (env "PORT") 8000))
-(def really-big-unix 32503680000)
 
 (defn handle-push-data
   [request]
@@ -28,12 +27,12 @@
 (defn handle-time-filter
   [request]
   (let
-    [body-request (get request :body)
-     from (get body-request :from)
-     to (get body-request :to)
+    [from (get-in request [:body "from"])
+     to (get-in request [:body "to"])
      response (if (nil? to) (recover-data-by-unix from) (recover-data-by-unix from to))
-     parsed-response (stringify-mongo-map response)]
-    {:status 200 :body {:data parsed-response}}))
+     parsed-response (map stringify-mongo-map response)]
+    {:status 200 :body {:data parsed-response}}
+    ))
 
 (defroutes app-routes
            (GET "/" [] "Maronn, I am running! Try cache me!")
@@ -44,8 +43,7 @@
 (def app
   (-> (handler/site app-routes)
       (wrap-json-body)
-      (wrap-json-response)
-      ))
+      (wrap-json-response)))
 
 (defn -main [& args]
   (http-server/run-server  app {:port port})

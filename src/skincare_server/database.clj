@@ -1,6 +1,8 @@
 (ns skincare_server.database
   (:require [monger.core :as mg]
             [monger.collection :as mc]
+            [monger.conversion :refer [from-db-object]]
+            [monger.result :refer [acknowledged?]]
             [dotenv :refer [env]])
   (:import [org.bson.types ObjectId]))
 
@@ -14,8 +16,7 @@
 (defn mongo-single-query-factory
   "A factory that abstracts the monger query options"
   [db collection-name]
-  (fn [param query]
-    (mc/find db collection-name {param query})))
+  (fn [param query] (mc/find db collection-name {param query})))
 
 ;; Connects to default port
 (defn mongo-pusher-factory
@@ -31,9 +32,10 @@
 
 (defn recover-data-by-unix
   ([from]
-   (recoverDataByTime from really-big-unix))
+   (let
+     [response (default-query :time {"$gte" from})]
+     (map (fn [cat] (from-db-object cat true)) response)))
   ([from to]
    (let
-     [query {:gte from :lte to}
-      response (default-query :time query)]
-     response)))
+     [response (default-query :time {"$gte" from "$lte" to})]
+     (map (fn [cat] (from-db-object cat true)) response))))
