@@ -2,23 +2,35 @@
   (:gen-class)
   (:require [org.httpkit.server :as http-server]
             [clj-time.local :as l]
+            [clj-time.coerce :as time-utils]
             [compojure.core :refer :all]
             [compojure.route :as route]
             [compojure.handler :as handler]
             [skincare_server.database :refer [default-push]]
             [ring.middleware.json :refer [wrap-json-body wrap-json-response]]
             [ring.util.response :only [response]]
-            ))
+            [dotenv :refer [env]]))
 
-(def port 8000)
+(def port (or (env "PORT") 8000))
+(def really-big-unix 32503680000)
 
 
 (defn handle-push-data
   [request]
   (let
-    [decorated-request (assoc request :time (str (l/local-now)))
-     document (default-push decorated-request)]
-    {:status 200 :body document}))
+    [body-request (get request :body)
+     decorated-request (assoc body-request :time (time-utils/to-long (l/local-now)))
+     document (default-push decorated-request)
+     mongoId (str (get document :_id))
+     response {:mongoId mongoId :data decorated-request}]
+    {:status 200 :body response}))
+
+(defn recoverDataByTime
+  ([from]
+    (recoverDataByTime from really-big-unix))
+  ([from to]
+
+    ))
 
 (defroutes app-routes
            (GET "/" [] "Maronn, I am running! Try cache me!")
