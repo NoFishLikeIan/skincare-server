@@ -1,32 +1,51 @@
 (ns skincare-server.core
   (:gen-class)
-  (:require [org.httpkit.server :refer [run-server]]
-            [clj-time.core :as t]
+  (:require [org.httpkit.server :as http-server]
             [clj-time.local :as l]
+            [clj-time.coerce :as time-utils]
             [compojure.core :refer :all]
             [compojure.route :as route]
-            [skincare_server.database :refer [default-push]]
-            [ring.middleware.json :refer [wrap-json-params]))
-(def port 8000)
+            [compojure.handler :as handler]
+            [skincare_server.database :refer [default-push recover-data-by-unix]]
+            [ring.middleware.json :refer [wrap-json-body wrap-json-response]]
+            [ring.util.response :only [response]]
+            [dotenv :refer [env]]
+            [skincare_server.utils :refer [stringify-mongo-map]]))
 
+(def port (or (env "PORT") 8000))
 
-(defn save-data
-  [mood skin products food exercise period]
-  (let [resp {:mood mood :skin skin :products products :food food :period period :exercise exercise}
-        resp (assoc resp :time (str (l/local-now)))]
-    (default-push resp)))
+(defn handle-push-data
+  [request]
+  (let
+    [body-request (get request :body)
+     decorated-request (assoc body-request :time (time-utils/to-long (l/local-now)))
+     document (default-push decorated-request)
+     mongoId (str (get document :_id))
+     response {:mongoId mongoId :data decorated-request}]
+    {:status 200 :body response}))
 
+(defn handle-time-filter
+  [request]
+  (let
+    [from (get-in request [:body "from"])
+     to (get-in request [:body "to"])
+     response (if (nil? to) (recover-data-by-unix from) (recover-data-by-unix from to))
+     parsed-response (map stringify-mongo-map response)]
+    {:status 200 :body {:data parsed-response}}
+    ))
 
-(defroutes app
+(defroutes app-routes
            (GET "/" [] "Maronn, I am running! Try cache me!")
-           (route/not-found "404!")
-           (POST "/input_value" request
-             (let [{request-params :params} request
-                   response {:status 200 :result done}]
-               (println request))))
-   
+           (POST "/post-data" req (handle-push-data req))
+           (GET "/filter-time" req (handle-time-filter req))
+           (route/not-found "404 page not found"))
+
+(def app
+  (-> (handler/site app-routes)
+      (wrap-json-body)
+      (wrap-json-response)))
 
 (defn -main [& args]
-  (run-server app {:port port})
+  (http-server/run-server  app {:port port})
   (println (format "Server started on port %s" port)))
   
