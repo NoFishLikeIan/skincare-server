@@ -1,9 +1,9 @@
 (ns skincare_server.database
   (:require [monger.core :as mg]
             [monger.collection :as mc]
-            [monger.conversion :refer [from-db-object]]
             [monger.result :refer [acknowledged?]]
-            [dotenv :refer [env]])
+            [dotenv :refer [env]]
+            [skincare_server.utils :refer [from-db-array-to-obj-array]])
   (:import [org.bson.types ObjectId]))
 
 (def db-name (or (env "DB_NAME") "test"))
@@ -27,6 +27,8 @@
           document (mc/insert-and-return db collection-name post)]
       document)))
 
+
+
 (def default-query (mongo-single-query-factory db collection-name))
 (def default-push (mongo-pusher-factory db collection-name))
 
@@ -34,8 +36,14 @@
   ([from]
    (let
      [response (default-query :time {"$gte" from})]
-     (map (fn [cat] (from-db-object cat true)) response)))
+     (from-db-array-to-obj-array response)))
   ([from to]
    (let
      [response (default-query :time {"$gte" from "$lte" to})]
-     (map (fn [cat] (from-db-object cat true)) response))))
+     (from-db-array-to-obj-array response))))
+
+(defn recover-data-by-product
+  [products-array]
+  (let
+    [response (default-query :products {"$all" products-array})]
+    (from-db-array-to-obj-array response)))
