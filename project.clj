@@ -1,7 +1,7 @@
-(defproject skincare-server "0.0.1-SNAPSHOT"
-  :description "FIXME: write description"
+(defproject skincare-server "0.1.0"
+  :description "Simple clojure server for the skincare app!"
   :dependencies [[org.clojure/clojure "1.9.0"]
-                 [http-kit "2.2.0"]
+                 [http-kit "2.3.0"]
                  [clj-time "0.15.0"]
                  [compojure "1.6.0"]
                  [com.novemberain/monger "3.1.0"]
