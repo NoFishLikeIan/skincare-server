@@ -35,15 +35,15 @@
 (defn recover-data-by-unix
   ([from]
    (let
-     [response (default-query :time {"$gte" from})]
+    [response (default-query :time {"$gte" from})]
      (from-db-array-to-obj-array response)))
   ([from to]
    (let
-     [response (default-query :time {"$gte" from "$lte" to})]
+    [response (default-query :time {"$gte" from "$lte" to})]
      (from-db-array-to-obj-array response))))
 
 (defn recover-data-by-product
   [products-array]
   (let
-    [response (default-query :products {"$all" products-array})]
+   [response (default-query :products {"$all" products-array})]
     (from-db-array-to-obj-array response)))
